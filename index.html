@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="theme-color" content="#1a1208">
+<title>Dr. Shroom — Invoices</title>
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🍄</text></svg>">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<!-- ═══════════ TOP BAR ═══════════ -->
+<header class="topbar">
+  <button class="hamburger" id="menuBtn" aria-label="Open menu">
+    <span></span><span></span><span></span>
+  </button>
+  <div class="topbar-title">
+    <span class="topbar-emoji">🍄</span>
+    <span class="topbar-text" id="screenTitle">Generate Invoice</span>
+  </div>
+  <div class="topbar-spacer"></div>
+</header>
+
+<!-- ═══════════ SIDE DRAWER ═══════════ -->
+<div class="drawer-overlay" id="drawerOverlay"></div>
+<nav class="drawer" id="drawer">
+  <div class="drawer-header">
+    <div class="drawer-logo">🍄</div>
+    <div class="drawer-brand">Dr. Shroom</div>
+    <div class="drawer-sub">Invoice Manager</div>
+  </div>
+  <ul class="drawer-menu">
+    <li data-screen="generate" class="drawer-item active">
+      <span class="drawer-icon">🧾</span>
+      <span>Generate Invoice</span>
+    </li>
+    <li data-screen="history" class="drawer-item">
+      <span class="drawer-icon">📜</span>
+      <span>Invoice History</span>
+    </li>
+    <li data-screen="products" class="drawer-item">
+      <span class="drawer-icon">📦</span>
+      <span>Products</span>
+    </li>
+    <li data-screen="recipients" class="drawer-item">
+      <span class="drawer-icon">🏬</span>
+      <span>Recipients</span>
+    </li>
+    <li data-screen="business" class="drawer-item">
+      <span class="drawer-icon">🏢</span>
+      <span>Business Info</span>
+    </li>
+    <li data-screen="settings" class="drawer-item">
+      <span class="drawer-icon">⚙️</span>
+      <span>Settings</span>
+    </li>
+  </ul>
+  <div class="drawer-footer">
+    <div class="drawer-footer-label">Connected to</div>
+    <div class="drawer-footer-status" id="connStatus">
+      <span class="status-dot status-checking"></span> Checking…
+    </div>
+  </div>
+</nav>
+
+<!-- ═══════════ TOAST ═══════════ -->
+<div class="toast" id="toast"></div>
+
+<!-- ═══════════ MAIN CONTENT ═══════════ -->
+<main id="app">
+
+  <!-- ───────── SCREEN: GENERATE INVOICE ───────── -->
+  <section class="screen active" id="screen-generate">
+
+    <!-- Step indicator -->
+    <div class="steps">
+      <div class="step active" data-step="1"><span>1</span>Recipient</div>
+      <div class="step-line"></div>
+      <div class="step" data-step="2"><span>2</span>Items</div>
+      <div class="step-line"></div>
+      <div class="step" data-step="3"><span>3</span>Preview</div>
+    </div>
+
+    <!-- STEP 1: Recipient -->
+    <div class="step-panel active" id="step-1">
+      <div class="card">
+        <div class="card-label">Who is this invoice for?</div>
+
+        <div class="field">
+          <label>Saved recipients</label>
+          <select id="savedRecipients" class="input">
+            <option value="">— New recipient —</option>
+          </select>
+        </div>
+
+        <div class="field">
+          <label>Recipient / store name <span class="req">*</span></label>
+          <input type="text" id="recName" class="input" placeholder="e.g. Yala General Store">
+        </div>
+        <div class="field">
+          <label>Address</label>
+          <textarea id="recAddress" class="input" rows="3" placeholder="Lower Bayavu, Kohima, Nagaland"></textarea>
+        </div>
+        <div class="field">
+          <label>Phone</label>
+          <input type="tel" id="recPhone" class="input" placeholder="10-digit mobile number">
+        </div>
+      </div>
+
+      <button class="btn btn-primary btn-block" id="toStep2">Next: Add Items →</button>
+    </div>
+
+    <!-- STEP 2: Items -->
+    <div class="step-panel" id="step-2">
+      <div class="card">
+        <div class="card-label">Add products</div>
+        <div id="productPicker" class="product-picker">
+          <!-- populated by JS -->
+        </div>
+        <button class="btn btn-ghost btn-block" id="addCustomItemBtn">+ Add custom item</button>
+      </div>
+
+      <div class="card" id="lineItemsCard" style="display:none">
+        <div class="card-label">Invoice items</div>
+        <div id="lineItems"></div>
+        <div class="line-total-row">
+          <span>Total</span>
+          <span id="runningTotal">₹0</span>
+        </div>
+      </div>
+
+      <div class="btn-row">
+        <button class="btn btn-secondary" id="backToStep1">← Back</button>
+        <button class="btn btn-primary" id="toStep3">Preview →</button>
+      </div>
+    </div>
+
+    <!-- STEP 3: Preview -->
+    <div class="step-panel" id="step-3">
+      <div class="preview-banner">
+        <span class="badge-draft">DRAFT</span> No invoice number assigned yet — review carefully before confirming.
+      </div>
+
+      <div class="card">
+        <div class="card-label">Payment terms</div>
+        <div class="field" style="margin-bottom:0;">
+          <label>Due in how many days? (0 = Immediate Payment)</label>
+          <input type="number" id="paymentTermsDays" class="input" value="0" min="0" step="1">
+        </div>
+      </div>
+
+      <div class="invoice-preview" id="invoicePreview">
+        <!-- populated by JS -->
+      </div>
+
+      <div class="btn-row">
+        <button class="btn btn-secondary" id="backToStep2">← Edit</button>
+        <button class="btn btn-primary" id="confirmInvoiceBtn">✓ Confirm &amp; Generate</button>
+      </div>
+    </div>
+
+  </section>
+
+  <!-- ───────── SCREEN: HISTORY ───────── -->
+  <section class="screen" id="screen-history">
+    <div class="search-bar">
+      <input type="text" id="historySearch" class="input" placeholder="Search by invoice no. or recipient">
+    </div>
+    <div id="historyList" class="history-list">
+      <div class="empty-state">
+        <div class="empty-emoji">📜</div>
+        <div class="empty-title">No invoices yet</div>
+        <div class="empty-sub">Invoices you generate will show up here.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ───────── SCREEN: PRODUCTS ───────── -->
+  <section class="screen" id="screen-products">
+    <button class="btn btn-primary btn-block" id="addProductBtn">+ Add Product</button>
+    <div id="productsList" class="products-list"></div>
+  </section>
+
+  <!-- ───────── SCREEN: RECIPIENTS ───────── -->
+  <section class="screen" id="screen-recipients">
+    <button class="btn btn-primary btn-block" id="addRecipientBtn">+ Add Recipient</button>
+    <div id="recipientsList" class="recipients-list"></div>
+  </section>
+
+  <!-- ───────── SCREEN: BUSINESS INFO ───────── -->
+  <section class="screen" id="screen-business">
+    <div class="card">
+      <div class="card-label">Your business details</div>
+      <div class="card-sub">These appear on every invoice. Edit anytime — changes apply going forward.</div>
+
+      <div class="field">
+        <label>Business name</label>
+        <input type="text" id="bizName" class="input">
+      </div>
+      <div class="field">
+        <label>Address</label>
+        <textarea id="bizAddress" class="input" rows="3"></textarea>
+      </div>
+      <div class="field">
+        <label>FSSAI number</label>
+        <input type="text" id="bizFssai" class="input">
+      </div>
+      <div class="field">
+        <label>Phone</label>
+        <input type="tel" id="bizPhone" class="input">
+      </div>
+      <div class="field">
+        <label>Email</label>
+        <input type="email" id="bizEmail" class="input">
+      </div>
+
+      <button class="btn btn-primary btn-block" id="saveBizBtn">Save Business Info</button>
+    </div>
+  </section>
+
+  <!-- ───────── SCREEN: SETTINGS ───────── -->
+  <section class="screen" id="screen-settings">
+    <div class="card">
+      <div class="card-label">Backend connection</div>
+      <div class="card-sub">Your Apps Script Web App URL. Required for the app to load products, recipients, and save invoices.</div>
+      <div class="field">
+        <label>Script URL</label>
+        <input type="url" id="scriptUrl" class="input" placeholder="https://script.google.com/macros/s/.../exec">
+      </div>
+      <div class="field">
+        <label>Your name (optional)</label>
+        <input type="text" id="createdByName" class="input" placeholder="e.g. Protyosh — shown in sheet's Created By column">
+      </div>
+      <button class="btn btn-primary btn-block" id="saveSettingsBtn">Save Settings</button>
+      <button class="btn btn-ghost btn-block" id="testConnBtn">Test Connection</button>
+    </div>
+    <div class="card">
+      <div class="card-label">About</div>
+      <div class="card-sub">Dr. Shroom Invoice App · v1.0<br>Built for B2B store invoicing, separate from the customer order system.</div>
+    </div>
+  </section>
+
+</main>
+
+<!-- ═══════════ MODAL (product / recipient editor) ═══════════ -->
+<div class="modal-overlay" id="modalOverlay">
+  <div class="modal" id="modal">
+    <div class="modal-header">
+      <span id="modalTitle">Edit</span>
+      <button class="modal-close" id="modalClose">✕</button>
+    </div>
+    <div class="modal-body" id="modalBody"></div>
+  </div>
+</div>
+
+<!-- ═══════════ LOADING OVERLAY ═══════════ -->
+<div class="loading-overlay" id="loadingOverlay">
+  <div class="spinner"></div>
+  <div id="loadingText">Loading…</div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="config.js"></script>
+<script src="api.js"></script>
+<script src="pdf.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
